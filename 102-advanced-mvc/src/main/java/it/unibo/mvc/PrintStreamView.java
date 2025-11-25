@@ -1,6 +1,7 @@
 /**
  * 
  */
+
 package it.unibo.mvc;
 
 import java.io.File;
@@ -28,10 +29,10 @@ public final class PrintStreamView implements DrawNumberView {
      * Builds a {@link PrintStreamView} that writes on file, given a path.
      * 
      * @param path a file path
-     * @throws FileNotFoundException 
+     * @throws FileNotFoundException exception in th print stream
      */
     public PrintStreamView(final String path) throws FileNotFoundException {
-        out = new PrintStream(new FileOutputStream(new File(path)));
+        out = new PrintStream(new FileOutputStream(new File(path))); //NOPMD just for exercise
     }
 
     @Override
@@ -56,6 +57,11 @@ public final class PrintStreamView implements DrawNumberView {
     @Override
     public void result(final DrawResult res) {
         out.println(res.getDescription());
+    }
+
+    @Override
+    public void displayError(final String message) {
+        out.println(message);
     }
 
 }

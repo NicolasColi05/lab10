@@ -1,24 +1,32 @@
 package it.unibo.mvc;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  */
 public final class DrawNumberApp implements DrawNumberViewObserver {
-    private static final int MIN = 0;
-    private static final int MAX = 100;
-    private static final int ATTEMPTS = 10;
 
     private final DrawNumber model;
     private final List<DrawNumberView> views;
 
     /**
-     * @param views
-     *            the views to attach
+     * @param views the views to attach
+     * 
+     * @throws IOException .
      */
-    public DrawNumberApp(final DrawNumberView... views) {
+    public DrawNumberApp(final DrawNumberView... views) throws IOException {
+        int count = 0;
+        int min = 0;
+        int max = 100;
+        int attempt = 10;
         /*
          * Side-effect proof
          */
@@ -27,7 +35,36 @@ public final class DrawNumberApp implements DrawNumberViewObserver {
             view.setObserver(this);
             view.start();
         }
-        this.model = new DrawNumberImpl(MIN, MAX, ATTEMPTS);
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(//NOPMD just for exercise
+            new FileInputStream("src/main/resources/config.yml")))) { 
+                final List<String> list = new ArrayList<>();
+                list.add(br.readLine());
+                list.add(br.readLine());
+                list.add(br.readLine());
+                for (final String string : list) {
+                    final StringTokenizer st = new StringTokenizer(string, ": ");
+                    while (st.hasMoreTokens()) {
+                        st.nextToken();
+                        final String number = st.nextToken();
+                        switch (count) {
+                            case 0: min = Integer.parseInt(number); 
+                            break;
+                            case 1: max = Integer.parseInt(number);
+                            break;
+                            case 2: attempt = Integer.parseInt(number); 
+                            break;
+                            default: break;
+                        }
+                        count++;
+                    }
+                }
+        } catch (final FileNotFoundException e) {
+            e.printStackTrace(); //NOPMD
+            for (final DrawNumberView drawNumberView : views) {
+                drawNumberView.displayError("file not found");
+            }
+        }
+        this.model = new DrawNumberImpl(min, max, attempt);
     }
 
     @Override
@@ -37,7 +74,7 @@ public final class DrawNumberApp implements DrawNumberViewObserver {
             for (final DrawNumberView view: views) {
                 view.result(result);
             }
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             for (final DrawNumberView view: views) {
                 view.numberIncorrect();
             }
@@ -63,10 +100,11 @@ public final class DrawNumberApp implements DrawNumberViewObserver {
     /**
      * @param args
      *            ignored
-     * @throws FileNotFoundException 
+     * @throws IOException .
      */
-    public static void main(final String... args) throws FileNotFoundException {
-        new DrawNumberApp(new DrawNumberViewImpl());
+    public static void main(final String... args) throws IOException {
+        new DrawNumberApp(new DrawNumberViewImpl(), new DrawNumberViewImpl(), new PrintStreamView("src/output.txt"),
+        new PrintStreamView("/dev/stdout"));
     }
 
 }
